@@ -1,4 +1,3 @@
-import click
 from click.testing import CliRunner
 from src.main import dfm
 import pytest
@@ -6,6 +5,7 @@ import pickle
 
 
 DATABASE_NAME = ".data"
+# TODO: Fix all exit code assertion with specific exception
 
 
 @pytest.fixture(scope="module")
@@ -22,18 +22,41 @@ def sample_add_data():
     ]
 
 
+class TestDelete:
+    def test_no_name_in_database(self, runner, sample_add_data):
+        with runner.isolated_filesystem():
+            with open(DATABASE_NAME, "wb+") as f:
+                pickle.dump(sample_add_data, f)
+            result = runner.invoke(dfm, ["delete", "kitty"])
+            assert 2 == result.exit_code
+
+    def test_name_in_database(self, runner, sample_add_data):
+        with runner.isolated_filesystem():
+            with open(DATABASE_NAME, "wb+") as f:
+                pickle.dump(sample_add_data, f)
+            runner.invoke(dfm, ["delete", "git"])
+            with open(DATABASE_NAME, "rb") as f:
+                assert [sample_add_data[0], sample_add_data[2]] == pickle.load(f)
+            runner.invoke(dfm, ["delete", "fish"])
+            with open(DATABASE_NAME, "rb") as f:
+                assert [sample_add_data[2]] == pickle.load(f)
+            runner.invoke(dfm, ["delete", "rofi"])
+            with open(DATABASE_NAME, "rb") as f:
+                assert [] == pickle.load(f)
+
+
 class TestAdd:
     def test_multiple_data(self, runner, sample_add_data):
         with runner.isolated_filesystem():
             for src, name in sample_add_data:
-                runner.invoke(
+                result = runner.invoke(
                     dfm,
                     ["add", src, name],
                 )
+                assert f"Add {src} as {name}\n" == result.output
             with open(DATABASE_NAME, "rb") as f:
                 assert sample_add_data == pickle.load(f)
 
-    # TODO: Fix exit code with specific exception
     def test_duplicate_src(self, runner: CliRunner, sample_add_data):
         with runner.isolated_filesystem():
             runner.invoke(
