@@ -1,6 +1,6 @@
 import click
 import pickle
-
+import os
 from click.utils import echo
 
 
@@ -24,12 +24,18 @@ def add(src, name):
     """Add file SRC to database as NAME"""
     data = load_data()
     if src in {i[0] for i in data}:
-        raise click.BadParameter(name, param_hint="SRC")
+        raise click.BadParameter(src, param_hint="SRC")
     if name in {i[1] for i in data}:
         raise click.BadParameter(name, param_hint="NAME")
-    data.append((src, name))
-    echo(f"Add {src} as {name}")
-    write_data(data)
+    try:
+        dest = f"{os.getcwd()}/{name}.config"
+        os.replace(src, dest)
+        os.symlink(dest, src)
+        data.append((src, name))
+        echo(f"Add {src} as {name}")
+        write_data(data)
+    except FileNotFoundError:
+        raise click.BadParameter(src, param_hint="SRC")
 
 
 @click.command()
@@ -41,6 +47,11 @@ def delete(name):
         if v[1] == name:
             data.pop(k)
             write_data(data)
+            try:
+                dest = f"{os.getcwd()}/{v[1]}.config"
+                os.replace(dest, v[0])
+            except FileNotFoundError:
+                pass
             return
     raise click.BadParameter(name, param_hint="NAME")
 

@@ -16,9 +16,9 @@ def runner():
 @pytest.fixture(scope="module")
 def sample_add_data():
     return [
-        ("~/.config/fish.config", "fish"),
-        ("~/.config/.gitconfig", "git"),
-        ("~/.config/rofi.rasi", "rofi"),
+        ("/.config/fish.config", "fish"),
+        ("/.config/.gitconfig", "git"),
+        ("/.config/rofi.rasi", "rofi"),
     ]
 
 
@@ -46,6 +46,9 @@ class TestDelete:
 
 
 class TestAdd:
+    def test_single_data(self, runner, sample_add_data):
+        pass
+
     def test_multiple_data(self, runner, sample_add_data):
         with runner.isolated_filesystem():
             for src, name in sample_add_data:
@@ -93,6 +96,6 @@ class TestShow:
                 pickle.dump(sample_add_data, f)
             result = runner.invoke(dfm, ["show"])
             output = result.output.split("\n")
-            assert "~/.config/fish.config fish" == output[0]
-            assert "~/.config/.gitconfig  git" == output[1]
-            assert "~/.config/rofi.rasi   rofi" == output[2]
+            assert "/.config/fish.config fish" == output[0]
+            assert "/.config/.gitconfig  git" == output[1]
+            assert "/.config/rofi.rasi   rofi" == output[2]
