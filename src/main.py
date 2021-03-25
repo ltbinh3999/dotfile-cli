@@ -6,12 +6,17 @@ import pickle
 @click.argument("src", type=click.Path())
 @click.argument("name")
 def add(src, name):
-    """Add file SRC to center folder as TO"""
+    """Add file SRC to center folder as NAME"""
     try:
         data = pickle.load(open(".data", "rb"))
+        if src in {i[0] for i in data}:
+            raise click.BadParameter(name, param_hint="SRC")
+        if name in {i[1] for i in data}:
+            raise click.BadParameter(name, param_hint="NAME")
         data.append((src, name))
-    except:
+    except OSError:
         data = [(src, name)]
+    click.echo(f"Add {src} as {name}")
     pickle.dump(data, open(".data", "wb"))
 
 
@@ -24,16 +29,22 @@ def show():
         for src, name in data:
             click.echo(f"{src:<{width}} {name}")
     except:
-        pass
+        click.echo("Empty data.")
+
+
+@click.command()
+def test():
+    """DEBUG METHOD"""
+    raise click.UsageError("bullshit")
 
 
 @click.group()
-def main():
+def dfm():
     pass
 
 
-main.add_command(add)
-main.add_command(show)
-
+dfm.add_command(add)
+dfm.add_command(show)
+dfm.add_command(test)
 if __name__ == "__main__":
-    main()
+    dfm()
