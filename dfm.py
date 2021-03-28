@@ -5,7 +5,7 @@ from click.utils import echo
 import sys
 from subprocess import Popen
 
-DATABASE = os.path.expanduser("~/.dfm_data")
+DATABASE = os.path.expanduser("~/dotdata")
 
 
 def load_data():
@@ -20,13 +20,16 @@ def load_data():
 def write_data(data):
     pickle.dump(data, open(f"{DATABASE}/.data", "wb"))
 
-
 @click.command()
-def link():
+@click.option('-f','--force',is_flag=True,help="Create link even without exist config files.")
+def link(force):
+    """Replace all local config file with soft link"""
     data = load_data()
     for src, dest in data:
         dest = f"{DATABASE}/{dest}.config"
-        os.symlink(dest, src)
+        if force:
+            os.makedirs(os.path.dirname(src),exist_ok=True)
+        Popen(["ln","-sf",dest,src])
 
 
 @click.command()
@@ -93,6 +96,12 @@ def test():
 
 @click.group()
 def dfm():
+    """Python tool to manage config files.
+    
+    This will create ~/dotdata dir and save all added config files there.
+    Use any storage method to transfer this dir between computers.
+    """
+
     pass
 
 
