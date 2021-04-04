@@ -2,8 +2,8 @@ import click
 import pickle
 import os
 from click.utils import echo
-import sys
 from subprocess import Popen
+import re
 
 DATABASE = os.path.expanduser("~/dotdata")
 
@@ -20,16 +20,21 @@ def load_data():
 def write_data(data):
     pickle.dump(data, open(f"{DATABASE}/.data", "wb"))
 
+
 @click.command()
-@click.option('-f','--force',is_flag=True,help="Create link even without exist config files.")
+@click.option(
+    "-f", "--force", is_flag=True, help="Create link even without exist config files."
+)
 def link(force):
     """Replace all local config file with soft link"""
     data = load_data()
+
     for src, dest in data:
+        src = os.path.expanduser("~/" + src)
         dest = f"{DATABASE}/{dest}.config"
         if force:
-            os.makedirs(os.path.dirname(src),exist_ok=True)
-        Popen(["ln","-sf",dest,src])
+            os.makedirs(os.path.dirname(src), exist_ok=True)
+        Popen(["ln", "-sf", dest, src])
 
 
 @click.command()
@@ -51,7 +56,7 @@ def add(src, name):
         dest = f"{DATABASE}/{name}.config"
         os.replace(src, dest)
         os.symlink(dest, src)
-        data.append((src, name))
+        data.append((re.sub(r"/\w+/\w+/", "", src), name))
         echo(f"Add {src} as {name}")
         write_data(data)
     except FileNotFoundError:
@@ -88,16 +93,17 @@ def show():
         echo("Empty data.")
 
 
+@click.argument("src", type=click.Path())
 @click.command()
-def test():
+def test(src):
     """DEBUG METHOD"""
-    echo(sys.path[0])
+    echo(re.sub(r"/\w+/\w+/", "", src))
 
 
 @click.group()
 def dfm():
     """Python tool to manage config files.
-    
+
     This will create ~/dotdata dir and save all added config files there.
     Use any storage method to transfer this dir between computers.
     """
